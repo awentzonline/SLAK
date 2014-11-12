@@ -1,0 +1,30 @@
+.DS_Store
+
+*.log
+*.pot
+*.py[co]
+.idea
+
+# pycharm
+.idea/
+
+# vagrant stuff
+.vagrant
+
+# virtualenv stuff
+.Python
+bin
+lib
+share
+include
+
+# static assets
+bower_components
+node_modules
+clickhole/static/stunts/*.css
+clickhole/static/theme/*.css
+clickhole/apps/cms/static/cms/less/*.css
+clickhole/apps/cms/static/cms/less/*/*.css
+public/static/*
+!public/static/README*
+db.sqlite3

@@ -1,0 +1,37 @@
+<html>
+<head></head>
+<body>
+    <h1>SLAK</h1>
+    <form action="#">
+    <input type="text" id="testo"/>
+    <input type="submit" value="SEND" onClick="SEND();"/>
+    </form>
+<div id="blackboard" style="width:640px;height:480px;background-color:black;color:white;border: solid 2px red;overflow:auto">
+</div>
+<script language="Javascript">
+    var s = new WebSocket("ws://192.168.1.117:8089/ws/");
+    s.onopen = function() {
+      s.send("hello");
+    };
+    s.onmessage = function(e) {
+        var bb = document.getElementById('blackboard')
+        var html = bb.innerHTML;
+        bb.innerHTML = html + '<br/>' + e.data;
+    };
+
+    s.onerror = function(e) {
+        //alert(e);
+    }
+    
+    s.onclose = function(e) {
+        //alert("connection closed");
+    }
+    
+    function SEND() {
+      var value = document.getElementById('testo').value;
+      s.send(value);
+      document.getElementById('testo').value = '';
+    }
+</script>
+</body>
+</html>

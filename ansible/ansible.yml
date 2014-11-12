@@ -1,0 +1,45 @@
+---
+- hosts: all
+  vars:
+    appname: "gws"
+  pre_tasks: 
+    - name: make sure that vagrant has the right permissions
+      lineinfile: 'dest=/etc/sudoers regexp="vagrant ALL=(ALL) NOPASSWD: ALL" line="vagrant ALL=(ALL) NOPASSWD: ALL"'
+    - apt: pkg=redis-server state=present
+    - name: Make sure that elasticsearch is started (and runs on boot)
+      service: name=redis-server state=started enabled=yes
+  handlers:
+    - name: Restart nginx
+      service: name=nginx state=restarted
+  handlers:
+    - name: restart {{ appname }}
+      file: path=/etc/uwsgi-emperor/{{ appname }}.ini state=touch owner=www-data group=www-data
+  roles:
+    - { role: uwsgi-python-app,
+        app_name: "{{ appname }}",
+        system_packages: ["python-dev"],
+        python_requirements: "/www/{{ appname }}/backend/requirements.txt",
+        uwsgi: {
+            gevent: 400,
+            http-websockets: yes,
+            http-raw-body: yes,
+            file: "backend/server.py",
+            socket: ":8081"
+        },
+        app_enabled: True,
+    }
+    - { role: avahi,
+        avahi_aliases: ["{{ appname }}"]
+    }
+    - nginx
+  post_tasks:
+    - template: src="nginx.local.conf" dest=/etc/nginx/conf.d/{{ appname }}.local.conf
+      notify: Restart nginx
+    - file: path=/var/{{ appname }} state=directory owner=www-data group=www-data
+    - apt: name=python-psycopg2 state=present
+
+    - authorized_key: user=www-data key="{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+  
+    - file: path=/etc/uwsgi-emperor/vassals/{{ appname }}.ini owner=www-data group=www-data state=touch
+    - copy: dest=/var/www/.profile content="cd /www/{{ appname }}; source /var/venvs/{{ appname }}/bin/activate"
+  sudo: yes
