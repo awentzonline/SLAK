@@ -6,7 +6,7 @@
     - name: make sure that vagrant has the right permissions
       lineinfile: 'dest=/etc/sudoers regexp="vagrant ALL=(ALL) NOPASSWD: ALL" line="vagrant ALL=(ALL) NOPASSWD: ALL"'
     - apt: pkg=redis-server state=present
-    - name: Make sure that elasticsearch is started (and runs on boot)
+    - name: Make sure that redis is started (and runs on boot)
       service: name=redis-server state=started enabled=yes
   handlers:
     - name: Restart nginx

@@ -20,7 +20,7 @@ def application(env, sr):
     print("websockets...")
     r = redis.StrictRedis(host='127.0.0.1', port=6379, db=0)
     channel = r.pubsub()
-    channel.subscribe('foobar')
+    channel.subscribe('SLAK')
 
     websocket_fd = uwsgi.connection_fd()
     redis_fd = channel.connection._sock.fileno()
@@ -41,14 +41,9 @@ def application(env, sr):
                         if dt < 0.5:
                             continue
                     last_message_t[client_id] = now
-                    r.publish('foobar', msg)
+                    r.publish('SLAK', msg)
             elif fd == redis_fd:
                 msg = channel.parse_response() 
                 # only interested in user messages
                 if msg[0] == 'message':
-                    uwsgi.websocket_send("[%s] %s" % (time.time(), msg[2]))
-
-
-
-
-
+                    uwsgi.websocket_send(unicode(msg[2]))

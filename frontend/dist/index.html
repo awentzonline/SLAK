@@ -2,9 +2,9 @@
 <head></head>
 <body>
     <h1>SLAK</h1>
-    <form action="#">
-    <input type="text" id="testo"/>
-    <input type="submit" value="SEND" onClick="SEND();"/>
+    <form method="post" onsubmit="return SEND();">
+        <input type="text" id="testo"/>
+        <input type="submit" value="SEND" />
     </form>
 <div id="blackboard" style="width:640px;height:480px;background-color:black;color:white;border: solid 2px red;overflow:auto">
 </div>
@@ -26,11 +26,13 @@
     s.onclose = function(e) {
         //alert("connection closed");
     }
-    
     function SEND() {
-      var value = document.getElementById('testo').value;
-      s.send(value);
-      document.getElementById('testo').value = '';
+        var value = document.getElementById('testo').value;
+        if (value) {
+            s.send(value);
+            document.getElementById('testo').value = '';
+        }
+        return false;
     }
 </script>
 </body>
