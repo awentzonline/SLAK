@@ -6,44 +6,26 @@ import gevent
 import redis
 import uwsgi
 
-
-client_id = 0
-last_message_t = {}
+from tremolo import TremoloApp
 
 
-def application(env, sr):
-    global client_id
-    client_id += 1
-    this_client = client_id
+class SLAKApp(TremoloApp):
+    """UTTERLY DISTRUPTIVE CHAT SERVER"""
 
-    uwsgi.websocket_handshake(env['HTTP_SEC_WEBSOCKET_KEY'], env.get('HTTP_ORIGIN', ''))
-    print("websockets...")
-    r = redis.StrictRedis(host='127.0.0.1', port=6379, db=0)
-    channel = r.pubsub()
-    channel.subscribe('SLAK')
+    def __init__(self, *args, **kwargs):
+        super(SLAKApp, self).__init__(*args, **kwargs)
+        self.last_message_t = {}
 
-    websocket_fd = uwsgi.connection_fd()
-    redis_fd = channel.connection._sock.fileno()
-    
-    while True:
-        ready = gevent.select.select([websocket_fd, redis_fd], [], [], 3.0)
-        if not ready[0]:
-            uwsgi.websocket_recv_nb()
-        for fd in ready[0]:
-            if fd == websocket_fd:
-                msg = uwsgi.websocket_recv_nb()
-                if msg:
-                    # rate limit messages
-                    last_time = last_message_t.get(client_id)
-                    now = time.time()
-                    if last_time:
-                        dt = now - last_time
-                        if dt < 0.5:
-                            continue
-                    last_message_t[client_id] = now
-                    r.publish('SLAK', msg)
-            elif fd == redis_fd:
-                msg = channel.parse_response() 
-                # only interested in user messages
-                if msg[0] == 'message':
-                    uwsgi.websocket_send(unicode(msg[2]))
+    def setup(self, core_id):
+        self.last_message_t[core_id] = 0
+
+    def websocket(self, core_id, msg):
+        last_t = self.last_message_t[core_id]
+        now = time.time()
+        dt = now - last_t
+        if dt >= 0.5 or not last_t:
+            self.r.publish(self.room, msg)
+            self.last_message_t[core_id] = now
+
+
+application = SLAKApp()

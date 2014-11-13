@@ -1,39 +1,54 @@
 <html>
-<head></head>
+<head>
+    <style>
+        #connected {
+            display: none;
+        }
+    </style>
+</head>
 <body>
     <h1>SLAK</h1>
-    <form method="post" onsubmit="return SEND();">
-        <input type="text" id="testo"/>
+    <div id="connected">Connected</div>
+    <div id="not-connected">Not connected :(</div>
+    <form onsubmit="return SEND();">
+        <input type="text" size="80" id="testo"/>
         <input type="submit" value="SEND" />
     </form>
-<div id="blackboard" style="width:640px;height:480px;background-color:black;color:white;border: solid 2px red;overflow:auto">
-</div>
-<script language="Javascript">
-    var s = new WebSocket("ws://192.168.1.117:8089/ws/");
-    s.onopen = function() {
-      s.send("hello");
-    };
-    s.onmessage = function(e) {
-        var bb = document.getElementById('blackboard')
-        var html = bb.innerHTML;
-        bb.innerHTML = html + '<br/>' + e.data;
-    };
+    <div id="blackboard" style="width:640px;height:480px;background-color:black;color:white;border: solid 2px red;overflow:auto">
+    </div>
+    <script type="text/javascript">
+        var s = new WebSocket('ws://' + document.location.host + '/ws/');
+        s.onopen = function() {
+            updateUI(true)
+            s.send("hello");
+        };
+        s.onmessage = function(e) {
+            var bb = document.getElementById('blackboard')
+            var html = bb.innerHTML;
+            bb.innerHTML = html + '<br/>' + e.data;
+        };
 
-    s.onerror = function(e) {
-        //alert(e);
-    }
-    
-    s.onclose = function(e) {
-        //alert("connection closed");
-    }
-    function SEND() {
-        var value = document.getElementById('testo').value;
-        if (value) {
-            s.send(value);
-            document.getElementById('testo').value = '';
+        s.onerror = function(e) {
+            console.log(e);
+            updateUI(false);
         }
-        return false;
-    }
-</script>
+        s.onclose = function(e) {
+            updateUI(true);
+        }
+        function SEND() {
+            var value = document.getElementById('testo').value;
+            if (value) {
+                s.send(value);
+                document.getElementById('testo').value = '';
+            }
+            return false;
+        }
+        function updateUI(connected) {
+            var connectedDisplay = connected ? 'block' : 'none';
+            var notConnectedDisplay = connected ? 'none' : 'block';
+            document.getElementById('connected').style.display =connectedDisplay;
+            document.getElementById('not-connected').style.display = notConnectedDisplay;
+        }
+    </script>
 </body>
 </html>

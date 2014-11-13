@@ -23,8 +23,9 @@
             gevent: 400,
             http-websockets: yes,
             http-raw-body: yes,
-            file: "backend/server.py",
-            socket: ":8081"
+            file: "server.py",
+            socket: ":8081",
+            chdir: "/www/{{ appname }}/backend"
         },
         app_enabled: True,
     }
