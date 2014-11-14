@@ -1,54 +1,65 @@
+<DOCTYPE html5>
 <html>
 <head>
-    <style>
-        #connected {
-            display: none;
-        }
-    </style>
+    <link rel="stylesheet" href="//cdn.quilljs.com/0.16.0/quill.snow.css" />
 </head>
 <body>
-    <h1>SLAK</h1>
-    <div id="connected">Connected</div>
-    <div id="not-connected">Not connected :(</div>
-    <form onsubmit="return SEND();">
-        <input type="text" size="80" id="testo"/>
-        <input type="submit" value="SEND" />
-    </form>
-    <div id="blackboard" style="width:640px;height:480px;background-color:black;color:white;border: solid 2px red;overflow:auto">
+    <div id="connection">Not connected</div>
+    <!-- Create the toolbar container -->
+    <div id="toolbar">
+      <button class="ql-bold">Bold</button>
+      <button class="ql-italic">Italic</button>
     </div>
-    <script type="text/javascript">
-        var s = new WebSocket('ws://' + document.location.host + '/ws/');
-        s.onopen = function() {
-            updateUI(true)
-            s.send("hello");
-        };
-        s.onmessage = function(e) {
-            var bb = document.getElementById('blackboard')
-            var html = bb.innerHTML;
-            bb.innerHTML = html + '<br/>' + e.data;
-        };
 
-        s.onerror = function(e) {
-            console.log(e);
-            updateUI(false);
+    <!-- Create the editor container -->
+    <div id="editor">
+      <div>Hello World!</div>
+    </div>
+
+    <!-- Initialize Quill editor -->
+    <script src="//cdn.quilljs.com/0.16.0/quill.min.js"></script>
+    <script>
+      var elConnected = document.getElementById('connection');
+      var editor = new Quill('#editor');
+      editor.addModule('toolbar', { container: '#toolbar' });
+      var socket = new WebSocket('ws://' + document.location.host + '/ws/');
+      var socketConnected = false;
+      var me = Math.random();
+      function onDelta(data) {
+        if (data.who != me) {
+          editor.updateContents(data.delta);
         }
-        s.onclose = function(e) {
-            updateUI(false);
+      }
+      socket.onopen = function () {
+        console.log('connected');
+        elConnected.innerHTML = 'Connected';
+        socketConnected = true;
+      };
+      socket.onmessage = function (msg) {
+        var data = JSON.parse(msg.data);
+        onDelta(data); 
+      };
+      socket.onerror = function () {
+        elConnected.innerHTML = 'Error';
+        socketConnected = false;
+      };
+      socket.onclose = function () {
+        elConnected.innerHTML = 'Not connected';
+        socketConnected = false;
+      };
+      editor.on('text-change', function (delta, source) {
+        if (!socketConnected) {
+          return;
         }
-        function SEND() {
-            var value = document.getElementById('testo').value;
-            if (value) {
-                s.send(value);
-                document.getElementById('testo').value = '';
-            }
-            return false;
+        if (source == 'user') {
+          socket.send(JSON.stringify({
+            who: me,
+            delta: delta
+          }));
         }
-        function updateUI(connected) {
-            var connectedDisplay = connected ? 'block' : 'none';
-            var notConnectedDisplay = connected ? 'none' : 'block';
-            document.getElementById('connected').style.display =connectedDisplay;
-            document.getElementById('not-connected').style.display = notConnectedDisplay;
-        }
+      });
+
     </script>
+    
 </body>
 </html>

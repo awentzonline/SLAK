@@ -23,8 +23,9 @@
             gevent: 400,
             http-websockets: yes,
             http-raw-body: yes,
-            file: "server.py",
+            file: "quill.py",
             socket: ":8081",
+            workers: 1,
             chdir: "/www/{{ appname }}/backend"
         },
         app_enabled: True,
